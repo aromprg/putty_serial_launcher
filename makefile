@@ -32,13 +32,13 @@ all: ${OUT_DIR}/${EXE}
 
 # Delete all build output
 clean:
-	@rm -f ${OUT_DIR}/*.o
-	@rm -f ${OUT_DIR}/*.d
-	@rm -f ${OUT_DIR}/${EXE}
+	@del /q ${OUT_DIR}\*.o
+	@del /q ${OUT_DIR}\*.d
+	@del /q ${OUT_DIR}\${EXE}
 
 # Create build output directories if they don't exist
 ${OUT_DIR}:
-	@mkdir -p "$@"
+	@mkdir "$@"
 
 # Compile object files for executable
 ${OUT_DIR}/%.o: %.c | ${OUT_DIR}
