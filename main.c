@@ -28,10 +28,14 @@ From PuTTY doc
 
 #if defined(UNICODE)
 #define SNPRINTF snwprintf
-#define STRCMP wcscmp
+#define SSCANF   swscanf
+#define STRCMP   wcscmp
+#define STRLEN   wcslen
 #else
 #define SNPRINTF snprintf
-#define STRCMP strcmp
+#define SSCANF   sscanf
+#define STRCMP   strcmp
+#define STRLEN   strlen
 #endif
 
 const UINT baud_list[] = {
@@ -45,31 +49,36 @@ const UINT baud_list[] = {
     CBR_115200,
     230400,
     460800,
-    921600};
+    921600
+};
 
 const UINT dbit_list[] = {
     5,
     6,
     7,
-    8};
+    8
+};
 
 LPCTSTR const sbit_list[] = {
     TEXT("1"),
     TEXT("1.5"),
-    TEXT("2")};
+    TEXT("2")
+};
 
 LPCTSTR const parity_list[] = {
     TEXT("None"),
     TEXT("Odd"),
     TEXT("Even"),
     TEXT("Mark"),
-    TEXT("Space")};
+    TEXT("Space")
+};
 
 LPCTSTR const flow_list[] = {
     TEXT("None"),
     TEXT("XON/XOFF"),
     TEXT("RTS/CTS"),
-    TEXT("DSR/DTR")};
+    TEXT("DSR/DTR")
+};
 
 struct {
     HWND dlg;
@@ -91,7 +100,7 @@ BOOL FileExists(LPCTSTR szPath) {
 }
 
 BOOL SerialCheck(LPCTSTR port) {
-    TCHAR portName[256];
+    TCHAR portName[32];
     SNPRINTF(portName, GET_ARRAY_SIZE(portName), TEXT("\\\\.\\%s"), port);
 
     HANDLE hwd = CreateFile(portName,
@@ -106,33 +115,69 @@ BOOL SerialCheck(LPCTSTR port) {
     return FALSE;
 }
 
+int SortCompareFn(const void* a, const void* b) {
+    int a_val = 0;
+    int b_val = 0;
+
+    // extract number
+    SSCANF(*(LPCTSTR*) a, TEXT("%*[^0123456789]%d"), &a_val);
+    SSCANF(*(LPCTSTR*) b, TEXT("%*[^0123456789]%d"), &b_val);
+
+    return a_val - b_val;
+}
+
 void EnumSerial(HWND hcbx, BOOL try_open) {
+    const UINT listSize = 64;
+    const UINT listItemSize = 16;
+
+    TCHAR list[listSize][listItemSize];
+    TCHAR* plist[listSize];
+    UINT listIndex = 0;
+
     HKEY hKey;
-    DWORD index = 0;
-    TCHAR value[256];
-    TCHAR port[256];
-    DWORD valueSize = GET_ARRAY_SIZE(value);
-    DWORD portSize = GET_ARRAY_SIZE(port);
+    DWORD regIndex = 0;
+    TCHAR regName[256];
+    TCHAR regValue[listItemSize];
+    DWORD regNameSize = GET_ARRAY_SIZE(regName);
+    DWORD regValueSize = listItemSize;
 
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("HARDWARE\\DEVICEMAP\\SERIALCOMM"), 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
         return;
     }
 
-    ComboBox_ResetContent(hcbx);
+    while (RegEnumValue(hKey, regIndex, regName, &regNameSize, NULL, NULL, (LPBYTE)regValue, &regValueSize) == ERROR_SUCCESS) {
 
-    while (RegEnumValue(hKey, index, value, &valueSize, NULL, NULL, (LPBYTE)port, &portSize) == ERROR_SUCCESS) {
-        if (!try_open || SerialCheck(port)) {
-            ComboBox_AddString(hcbx, port);
+        regValue[listItemSize - 1] = TEXT('\0');  // REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ may not be null terminated
+
+        if (!try_open || SerialCheck(regValue)) {
+            SNPRINTF(list[listIndex], listItemSize, TEXT("%s"), regValue);
+            plist[listIndex] = list[listIndex];
+
+            listIndex++;
+
+            if (listIndex >= listSize) {
+                break;
+            }
         }
 
-        index++;
-        valueSize = GET_ARRAY_SIZE(value);
-        portSize = GET_ARRAY_SIZE(port);
+        regIndex++;
+        regNameSize = GET_ARRAY_SIZE(regName);
+        regValueSize = listItemSize;
     }
 
     RegCloseKey(hKey);
 
-    ComboBox_SetCurSel(hcbx, 0);
+    ComboBox_ResetContent(hcbx);
+
+    if (listIndex) {
+        qsort(plist, listIndex, sizeof(plist[0]), SortCompareFn);
+
+        for (UINT i = 0; i < listIndex; ++i) {
+            ComboBox_AddString(hcbx, plist[i]);
+        }
+
+        ComboBox_SetCurSel(hcbx, 0);
+    }
 }
 
 BOOL ExecPutty(int cmd) {
@@ -252,7 +297,7 @@ void InitDialogUI(void) {
     valueType = REG_SZ;
     valueSize = GET_ARRAY_SIZE(str) - 1;
     if (RegQueryValueEx(hKey, TEXT("SerialLine"), NULL, &valueType, (LPBYTE)str, &valueSize) == ERROR_SUCCESS) {
-        str[GET_ARRAY_SIZE(str) - 1] = '\0';  // REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ may not be null terminated
+        str[GET_ARRAY_SIZE(str) - 1] = TEXT('\0');  // REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ may not be null terminated
 
         UINT cnt = ComboBox_GetCount(hwnd_dlg.port_cbx);
         for (i = 0; i < cnt; ++i) {
