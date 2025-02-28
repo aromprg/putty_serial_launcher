@@ -9,8 +9,8 @@ CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
 
 /* Executable version information */
 VS_VERSION_INFO    VERSIONINFO
-FILEVERSION        0,1,0,0
-PRODUCTVERSION     0,1,0,0
+FILEVERSION        0,2,0,0
+PRODUCTVERSION     0,2,0,0
 FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
   FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
@@ -27,12 +27,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "aromprg@github.com"
       VALUE "FileDescription", APPNAME
-      VALUE "FileVersion", "0.1.0.0"
+      VALUE "FileVersion", "0.2.0.0"
       VALUE "InternalName", EXENAME
       VALUE "LegalCopyright", "\xA92025 aromprg@github.com"
       VALUE "OriginalFilename", EXENAME
       VALUE "ProductName", APPNAME
-      VALUE "ProductVersion", "0.1.0.0"
+      VALUE "ProductVersion", "0.2.0.0"
     END
   END
   BLOCK "VarFileInfo"
@@ -47,7 +47,7 @@ STYLE DS_CENTER | DS_MODALFRAME | WS_POPUPWINDOW | WS_CAPTION
 FONT 9, "MS Shell Dlg"
 {
     LTEXT "Port", -1, 5, 7, 30, 10
-    COMBOBOX IDC_PORT_CBX, 35, 5, 60, 100, CBS_HASSTRINGS | CBS_SORT | CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX IDC_PORT_CBX, 35, 5, 60, 100, CBS_HASSTRINGS | CBS_AUTOHSCROLL | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON "", IDC_UPD_BTN, 100, 4, 25, 15, BS_ICON
     AUTOCHECKBOX "Try Port", IDC_TRY_CHB, 100, 21, 27, 17, BS_MULTILINE | WS_TABSTOP
     LTEXT "Speed", -1, 5, 22, 30, 10
